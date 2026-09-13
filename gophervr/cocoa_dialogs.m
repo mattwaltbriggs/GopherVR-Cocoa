@@ -209,22 +209,10 @@ void StatusUpdate(char *msg)
 {
     if (!msg) return;
     stale_fps = 0;
-    /* StatusUpdate may be called from any thread (e.g. during drawscene).
-     * The statusLabel is on the main thread, so dispatch if needed. */
-    if ([NSThread isMainThread]) {
-        NSString *nsMsg = [NSString stringWithUTF8String:msg];
-        AppDelegate *app = (AppDelegate *)[NSApp delegate];
-        if ([app respondsToSelector:@selector(statusLabel)]) {
-            [app.statusLabel setStringValue:nsMsg];
-        }
-    } else {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            NSString *nsMsg = [NSString stringWithUTF8String:msg];
-            AppDelegate *app = (AppDelegate *)[NSApp delegate];
-            if ([app respondsToSelector:@selector(statusLabel)]) {
-                [app.statusLabel setStringValue:nsMsg];
-            }
-        });
+    NSString *nsMsg = [NSString stringWithUTF8String:msg];
+    AppDelegate *app = (AppDelegate *)[NSApp delegate];
+    if ([app respondsToSelector:@selector(statusLabel)]) {
+        [app.statusLabel setStringValue:nsMsg];
     }
 }
 
