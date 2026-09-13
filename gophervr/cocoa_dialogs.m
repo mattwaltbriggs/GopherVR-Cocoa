@@ -7,6 +7,7 @@
  */
 
 #import <Cocoa/Cocoa.h>
+#import "AppDelegate.h"
 
 /* Define Motif types so dialogs.h compiles */
 typedef void *Widget;
@@ -208,22 +209,23 @@ void StatusUpdate(char *msg)
 {
     if (!msg) return;
     stale_fps = 0;
-    dispatch_async(dispatch_get_main_queue(), ^{
+    /* StatusUpdate may be called from any thread (e.g. during drawscene).
+     * The statusLabel is on the main thread, so dispatch if needed. */
+    if ([NSThread isMainThread]) {
         NSString *nsMsg = [NSString stringWithUTF8String:msg];
-        NSWindow *keyWin = [NSApp keyWindow];
-        if (keyWin) {
-            /* Try to find a status label in the window */
-            for (NSView *v in [[keyWin contentView] subviews]) {
-                if ([v isKindOfClass:[NSTextField class]]) {
-                    NSTextField *tf = (NSTextField *)v;
-                    if ([[tf identifier] isEqualToString:@"statusLabel"]) {
-                        [tf setStringValue:nsMsg];
-                        return;
-                    }
-                }
-            }
+        AppDelegate *app = (AppDelegate *)[NSApp delegate];
+        if ([app respondsToSelector:@selector(statusLabel)]) {
+            [app.statusLabel setStringValue:nsMsg];
         }
-    });
+    } else {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            NSString *nsMsg = [NSString stringWithUTF8String:msg];
+            AppDelegate *app = (AppDelegate *)[NSApp delegate];
+            if ([app respondsToSelector:@selector(statusLabel)]) {
+                [app.statusLabel setStringValue:nsMsg];
+            }
+        });
+    }
 }
 
 void StatusNew(void *parent, char *msg)
